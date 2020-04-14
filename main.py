@@ -1,5 +1,4 @@
 import cv2 as cv
-import matplotlib.pylab as plt
 import numpy as np
 
 
@@ -17,42 +16,70 @@ def draw_lines(img, lines):
 
     for line in lines:
         for x1, y1, x2, y2 in line:
-            cv.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), thickness=5)
+            cv.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), thickness=4)
 
     img = cv.addWeighted(img, 0.7, line_image, 1, 0.0)
     return img
 
 
-if __name__ == "__main__":
-
-    img = cv.imread('lane.jpeg')
-    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+def proccess_img(img):
 
     h = img.shape[0]
     w = img.shape[1]
 
-    print(h, w)
+
 
     region_of_interest_vertex = np.array([[
-        (0, h),
-        (w/2, h/2 + 30),
-        (w, h)
+        (0+w/6, h-h/10),
+        (w/2, 3*h/5),
+        (w-w/6, h-h/10)
     ]], np.int32)
 
     gray_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
-    canny_img = cv.Canny(gray_img, 100, 200)
+    canny_img = cv.Canny(gray_img, 100, 120)
 
     region_cropped = get_region(canny_img, region_of_interest_vertex)
 
     lines = cv.HoughLinesP(region_cropped,
-                           rho=6,
+                           rho=2,
                            theta=np.pi/60,
-                           threshold=160,
+                           threshold=50,
                            lines=np.array([]),
-                           minLineLength=5,
-                           maxLineGap=15)
+                           minLineLength=20,
+                           maxLineGap=50)
 
-    img_lines = draw_lines(img, lines)
+    if lines is not None:
+        img_lines = draw_lines(img, lines)
+        return img_lines
+    else:
+        return None
 
-    plt.imshow(img_lines, cmap='gray')
-    plt.show()
+
+
+if __name__ == "__main__":
+
+    cap = cv.VideoCapture('driving.mp4')
+
+    while cap.isOpened():
+
+        ret, frame = cap.read()
+
+        if not ret:
+            break
+
+        #frame = cv.resize(frame, (1080, 720))
+        new_frame = proccess_img(frame)
+        if new_frame is None:
+            cv.imshow('Lane Line Detection', frame)
+        else:
+            cv.imshow('Lane Line Detection', new_frame)
+        cv.moveWindow('Lane Line Detection', 200, 200)
+
+
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv.destroyAllWindows()
+
+
