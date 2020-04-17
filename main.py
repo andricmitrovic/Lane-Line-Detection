@@ -16,9 +16,9 @@ def draw_lines(img, lines):
 
     for line in lines:
         for x1, y1, x2, y2 in line:
-            cv.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), thickness=4)
+            cv.line(line_image, (x1, y1), (x2, y2), (0, 0, 255), thickness=8)
 
-    img = cv.addWeighted(img, 0.7, line_image, 1, 0.0)
+    img = cv.addWeighted(img, 0.8, line_image, 1, 0.0)
     return img
 
 
@@ -27,12 +27,13 @@ def proccess_img(img):
     h = img.shape[0]
     w = img.shape[1]
 
-
-
     region_of_interest_vertex = np.array([[
-        (0+w/6, h-h/10),
-        (w/2, 3*h/5),
-        (w-w/6, h-h/10)
+        (0, h),
+        (w/2, 1.2*h/2),
+        (w, h)
+        # (0+w/6, h-h/10),
+        # (w/2, 3*h/5),
+        # (w-w/6, h-h/10)
     ]], np.int32)
 
     gray_img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
@@ -42,18 +43,17 @@ def proccess_img(img):
 
     lines = cv.HoughLinesP(region_cropped,
                            rho=2,
-                           theta=np.pi/60,
+                           theta=np.pi/180,
                            threshold=50,
                            lines=np.array([]),
-                           minLineLength=20,
-                           maxLineGap=50)
+                           minLineLength=40,
+                           maxLineGap=100)
 
     if lines is not None:
         img_lines = draw_lines(img, lines)
         return img_lines
     else:
         return None
-
 
 
 if __name__ == "__main__":
@@ -67,14 +67,13 @@ if __name__ == "__main__":
         if not ret:
             break
 
-        #frame = cv.resize(frame, (1080, 720))
+        # frame = cv.resize(frame, (1080, 720))
         new_frame = proccess_img(frame)
         if new_frame is None:
             cv.imshow('Lane Line Detection', frame)
         else:
             cv.imshow('Lane Line Detection', new_frame)
         cv.moveWindow('Lane Line Detection', 200, 200)
-
 
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
